@@ -36,13 +36,15 @@ func PostHandler(ctx *fasthttp.RequestCtx) {
 
 func main() {
 	r := ming.New()
+	r.Static("./", true)
 	r.Get("/", Home)
 	r.Post("/add", PostHandler)
 	r.All("/all", AllHandler)
 	r.Get("/search", SearchHandler)
 	r.Run("127.0.0.1:8000")
-	//r.Run(":8000")
+    // r.Run(":8000")
 }
+
 ```
 
 ## Test
