@@ -26,6 +26,7 @@ func PostHandler(ctx *fasthttp.RequestCtx) {
 
 func main() {
 	r := ming.New()
+	r.Static("./", true)
 	r.Get("/", Home)
 	r.Post("/add", PostHandler)
 	r.All("/all", AllHandler)
