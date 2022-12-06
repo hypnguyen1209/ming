@@ -50,3 +50,7 @@ func Query(ctx *fasthttp.RequestCtx, str string) []byte {
 func SetHeader(ctx *fasthttp.RequestCtx, key string, value string) {
 	ctx.Response.Header.Set(key, value)
 }
+
+func Body(ctx *fasthttp.RequestCtx) []byte {
+	return ctx.Request.Body()
+}
