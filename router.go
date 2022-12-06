@@ -12,7 +12,10 @@ var (
 )
 
 type Router struct {
-	trees *Tree
+	trees            *Tree
+	PanicHandler     func(*fasthttp.RequestCtx, interface{})
+	NotFound         fasthttp.RequestHandler
+	MethodNotAllowed fasthttp.RequestHandler
 }
 
 func New() *Router {
@@ -53,4 +56,10 @@ func SetHeader(ctx *fasthttp.RequestCtx, key string, value string) {
 
 func Body(ctx *fasthttp.RequestCtx) []byte {
 	return ctx.Request.Body()
+}
+
+func (r *Router) recv(ctx *fasthttp.RequestCtx) {
+	if rcv := recover(); rcv != nil {
+		r.PanicHandler(ctx, rcv)
+	}
 }

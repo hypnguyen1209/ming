@@ -23,6 +23,7 @@ func SearchHandler(ctx *fasthttp.RequestCtx) {
 func PostHandler(ctx *fasthttp.RequestCtx) {
 	ctx.Write(ming.Body(ctx))
 }
+
 func main() {
 	r := ming.New()
 	r.Get("/", Home)
