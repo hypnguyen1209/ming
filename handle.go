@@ -87,3 +87,12 @@ func (r *Router) Trace(path string, handler fasthttp.RequestHandler) {
 func (r *Router) All(path string, handler fasthttp.RequestHandler) {
 	r.Handle("ALL", path, handler)
 }
+
+func (r *Router) Static(rootPath string, IsIndexPage bool) {
+	fs := &fasthttp.FS{
+		Root:               rootPath,
+		IndexNames:         []string{"index.html"},
+		GenerateIndexPages: IsIndexPage,
+	}
+	r.NotFound = fs.NewRequestHandler()
+}
