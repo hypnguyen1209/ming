@@ -1,6 +1,6 @@
 # ming
 
-Custom HTTP Mux lightweight and high performance 🥗
+**Custom HTTP Mux web framework lightweight and high performance 🥗 priority-based routing with Redix Tree which is based on [fasthttp](https://github.com/valyala/fasthttp)**
 
 ![](https://i.imgur.com/yCMS1yq.png)
 
