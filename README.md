@@ -4,6 +4,16 @@ Custom HTTP Mux lightweight and high performance 🥗
 
 ![](https://i.imgur.com/yCMS1yq.png)
 
+## Installation
+
+To install Ming, use the `go get` command:
+
+```bash
+go get -u github.com/hypnguyen1209/ming
+```
+
+This will download and install the latest version of Ming and its dependencies in your Go module.
+
 ## Features
 
 ✅ **High Performance** - Built on fasthttp for maximum speed  
