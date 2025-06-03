@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/valyala/fasthttp"
 )
@@ -49,16 +50,45 @@ func (hs HostSwitch) CheckHost(ctx *fasthttp.RequestCtx) {
 	}
 }
 
+// LoggingHandler wraps the router's handler with request logging functionality.
+// It logs the request method, path, client IP, status code, and response time.
+func (r *Router) LoggingHandler() fasthttp.RequestHandler {
+	return func(ctx *fasthttp.RequestCtx) {
+		start := time.Now()
+		
+		// Process the request with the original handler
+		r.Handler(ctx)
+		
+		// Get request details
+		method := string(ctx.Method())
+		path := string(ctx.Path())
+		ip := ctx.RemoteAddr().String()
+		status := ctx.Response.StatusCode()
+		
+		// Calculate the response time
+		duration := time.Since(start)
+		
+		// Format the log entry similar to the requested format
+		// [2025/06/03 - 03:53:36] GET - /path - 192.168.157.1:25328 - 200 - 50.52µs
+		now := time.Now()
+		log.Printf("[%d/%02d/%02d - %02d:%02d:%02d] %s - %s - %s - %d - %v",
+			now.Year(), now.Month(), now.Day(),
+			now.Hour(), now.Minute(), now.Second(),
+			method, path, ip, status, duration)
+	}
+}
+
 // Run starts a fasthttp server with the router as handler.
 // The addr parameter can be either ":8080" for all interfaces or "127.0.0.1:8080" for specific interface.
 // This is a convenience function to start the server with default configuration.
+// It includes request logging that shows timestamp, method, path, client IP, status code, and response time.
 func (r *Router) Run(addr string) {
 	if strings.HasPrefix(addr, ":") {
-		log.Fatal(fasthttp.ListenAndServe(addr, r.Handler))
+		log.Fatal(fasthttp.ListenAndServe(addr, r.LoggingHandler()))
 	} else {
 		port := ":" + strings.Split(addr, ":")[1]
 		hs := make(HostSwitch)
-		hs[addr] = r.Handler
+		hs[addr] = r.LoggingHandler()
 		log.Fatal(fasthttp.ListenAndServe(port, hs.CheckHost))
 	}
 }
