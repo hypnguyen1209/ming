@@ -124,6 +124,101 @@ q := string(ming.Query(ctx, "search"))
 body := ming.Body(ctx)
 ```
 
+### Request Data Handling
+
+#### GET Request Query Parameters
+
+Ming provides easy access to URL query parameters through the `ming.Query()` function:
+
+```go
+// For URL: /search?term=ming&page=2
+func SearchHandler(ctx *fasthttp.RequestCtx) {
+    // Get single query parameters
+    term := string(ming.Query(ctx, "term"))     // Returns "ming"
+    page := string(ming.Query(ctx, "page"))     // Returns "2"
+    
+    // Check if parameter exists
+    if len(ming.Query(ctx, "term")) > 0 {
+        // Parameter exists
+    }
+    
+    // Get all query parameters
+    queryArgs := ctx.QueryArgs()
+    
+    // Iterate through all query parameters
+    queryArgs.VisitAll(func(key, value []byte) {
+        fmt.Printf("Parameter %s = %s\n", string(key), string(value))
+    })
+    
+    // Respond with search results
+    fmt.Fprintf(ctx, "Search results for: %s (Page %s)", term, page)
+}
+```
+
+#### POST Request Body
+
+Ming makes it easy to handle various types of POST request data:
+
+```go
+// Handle JSON POST request
+func JsonHandler(ctx *fasthttp.RequestCtx) {
+    // Get full request body as []byte
+    body := ming.Body(ctx)
+    
+    // Now you can unmarshal the JSON data
+    var data map[string]interface{}
+    if err := json.Unmarshal(body, &data); err != nil {
+        ctx.SetStatusCode(400)
+        fmt.Fprintf(ctx, "Invalid JSON: %s", err.Error())
+        return
+    }
+    
+    // Process the data
+    fmt.Fprintf(ctx, "Received JSON with %d fields", len(data))
+}
+
+// Handle form POST request
+func FormHandler(ctx *fasthttp.RequestCtx) {
+    // Access form values
+    username := string(ctx.FormValue("username"))
+    email := string(ctx.FormValue("email"))
+    
+    // Check if a specific form field was provided
+    if len(ctx.FormValue("username")) == 0 {
+        ctx.SetStatusCode(400)
+        ctx.WriteString("Username is required")
+        return
+    }
+    
+    // Get all form values
+    ctx.PostArgs().VisitAll(func(key, value []byte) {
+        fmt.Printf("Form field %s = %s\n", string(key), string(value))
+    })
+    
+    // Access uploaded files (for multipart/form-data)
+    ctx.Request.SetBodyStream(ctx.RequestBodyStream(), int(ctx.Request.Header.ContentLength()))
+    form, err := ctx.MultipartForm()
+    if err == nil {
+        // Get uploaded files by form field name
+        if files, ok := form.File["upload"]; ok && len(files) > 0 {
+            filename := files[0].Filename
+            // Process the uploaded file
+        }
+    }
+    
+    fmt.Fprintf(ctx, "Form processed for user: %s", username)
+}
+```
+
+#### Working with Different Content Types
+
+Ming handles various content types transparently:
+
+- **application/json**: Use `ming.Body(ctx)` and then unmarshal the JSON
+- **application/x-www-form-urlencoded**: Use `ctx.FormValue(key)` to access form fields
+- **multipart/form-data**: Use `ctx.MultipartForm()` to access form fields and uploaded files
+- **text/plain** or other raw data: Use `ming.Body(ctx)` to access the raw body
+
 ### Static Files
 ```go
 r.Static("./public", true)  // Serve static files with directory listing
@@ -322,16 +417,6 @@ r.Get("/{service}/{version}/users", generalHandler)
 ```
 
 This conflict resolution system makes routing predictable and intuitive, while still providing flexibility.
-
-## Performance
-
-Ming is built on fasthttp for maximum performance. See benchmarks:
-
-Source: https://github.com/smallnest/go-web-framework-benchmark
-
-![](https://github.com/smallnest/go-web-framework-benchmark/raw/master/cpubound_benchmark.png)
-
-![](https://github.com/smallnest/go-web-framework-benchmark/raw/master/concurrency.png)
 
 ## Advanced Usage
 
@@ -556,3 +641,12 @@ r.Get("/admin/dashboard", authMiddleware(adminOnly(dashboardHandler)))
 
 See the [auth example](_examples/auth_example.go) for a complete authentication implementation.
 
+## Performance
+
+Ming is built on fasthttp for maximum performance. See benchmarks:
+
+Source: https://github.com/smallnest/go-web-framework-benchmark
+
+![](https://github.com/smallnest/go-web-framework-benchmark/raw/master/cpubound_benchmark.png)
+
+![](https://github.com/smallnest/go-web-framework-benchmark/raw/master/concurrency.png)
