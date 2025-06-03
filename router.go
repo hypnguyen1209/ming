@@ -123,9 +123,6 @@ func (r *Router) Run(addr string) {
 	}
 	
 	fmt.Println("----------------------------------------------")
-	fmt.Println("Logging format: [YYYY/MM/DD - HH:MM:SS] METHOD - PATH - IP:PORT - STATUS - DURATION")
-	fmt.Println("Min time unit: microsecond (µs)")
-	fmt.Println("----------------------------------------------")
 
 	if strings.HasPrefix(addr, ":") {
 		log.Fatal(fasthttp.ListenAndServe(addr, r.LoggingHandler()))
