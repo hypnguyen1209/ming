@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hypnguyen1209/ming"
+	"github.com/hypnguyen1209/ming/v2"
 	"github.com/valyala/fasthttp"
 )
 

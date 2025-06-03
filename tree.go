@@ -7,20 +7,23 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
+// nodeType represents different types of route nodes in the routing tree
 type nodeType uint8
 
 const (
-	static nodeType = iota // default
-	root
-	param
-	catchAll
+	static nodeType = iota // default - static path segment
+	root                   // root node
+	param                  // parameter node like {name}
+	catchAll               // catch-all node like {filepath:*}
 )
 
+// Tree represents a radix tree for a specific HTTP method
 type Tree struct {
 	method string
 	root   *Node
 }
 
+// Node represents a node in the radix tree routing structure
 type Node struct {
 	path      string
 	indices   string

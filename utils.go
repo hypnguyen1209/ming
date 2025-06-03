@@ -2,6 +2,9 @@ package ming
 
 import "github.com/valyala/fasthttp"
 
+// GetMethod returns the HTTP method of the request as a string.
+// This is a utility function that converts fasthttp method detection
+// into a standardized string format.
 func GetMethod(ctx *fasthttp.RequestCtx) string {
 	switch true {
 	case ctx.IsGet():

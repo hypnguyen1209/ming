@@ -7,6 +7,14 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
+// Handle registers a new request handler with the given path and method.
+//
+// For GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS, TRACE and CONNECT requests,
+// the respective shortcut methods can be used.
+//
+// This function is intended for bulk loading and to allow the usage of less
+// frequently used, non-standardized or custom methods (e.g. for internal
+// communication with a proxy).
 func (r *Router) Handle(method, path string, handler fasthttp.RequestHandler) {
 	if !strings.HasPrefix(path, "/") {
 		panic("path must begin with \"/\" in \"" + path + "\"")
@@ -25,6 +33,8 @@ func (r *Router) Handle(method, path string, handler fasthttp.RequestHandler) {
 	tree.addRoute(path, handler)
 }
 
+// Handler handles all requests for the router.
+// It implements the fasthttp.RequestHandler interface.
 func (r *Router) Handler(ctx *fasthttp.RequestCtx) {
 	if r.PanicHandler != nil {
 		defer r.recv(ctx)
@@ -98,45 +108,59 @@ func (r *Router) Handler(ctx *fasthttp.RequestCtx) {
 	}
 }
 
+// Get registers a route for GET requests to the specified path with the provided handler.
 func (r *Router) Get(path string, handler fasthttp.RequestHandler) {
 	r.Handle(fasthttp.MethodGet, path, handler)
 }
 
+// Head registers a route for HEAD requests to the specified path with the provided handler.
 func (r *Router) Head(path string, handler fasthttp.RequestHandler) {
 	r.Handle(fasthttp.MethodHead, path, handler)
 }
 
+// Post registers a route for POST requests to the specified path with the provided handler.
 func (r *Router) Post(path string, handler fasthttp.RequestHandler) {
 	r.Handle(fasthttp.MethodPost, path, handler)
 }
 
+// Put registers a route for PUT requests to the specified path with the provided handler.
 func (r *Router) Put(path string, handler fasthttp.RequestHandler) {
 	r.Handle(fasthttp.MethodPut, path, handler)
 }
 
+// Patch registers a route for PATCH requests to the specified path with the provided handler.
 func (r *Router) Patch(path string, handler fasthttp.RequestHandler) {
 	r.Handle(fasthttp.MethodPatch, path, handler)
 }
 
+// Delete registers a route for DELETE requests to the specified path with the provided handler.
 func (r *Router) Delete(path string, handler fasthttp.RequestHandler) {
 	r.Handle(fasthttp.MethodDelete, path, handler)
 }
 
+// Connect registers a route for CONNECT requests to the specified path with the provided handler.
 func (r *Router) Connect(path string, handler fasthttp.RequestHandler) {
 	r.Handle(fasthttp.MethodConnect, path, handler)
 }
 
+// Options registers a route for OPTIONS requests to the specified path with the provided handler.
 func (r *Router) Options(path string, handler fasthttp.RequestHandler) {
 	r.Handle(fasthttp.MethodOptions, path, handler)
 }
 
+// Trace registers a route for TRACE requests to the specified path with the provided handler.
 func (r *Router) Trace(path string, handler fasthttp.RequestHandler) {
 	r.Handle(fasthttp.MethodTrace, path, handler)
 }
+// All registers a route that matches all HTTP methods for the specified path with the provided handler.
+// This is useful for routes that need to respond to multiple HTTP methods with the same logic.
 func (r *Router) All(path string, handler fasthttp.RequestHandler) {
 	r.Handle("ALL", path, handler)
 }
 
+// Static configures the router to serve static files from the specified directory.
+// The rootPath parameter specifies the root directory from which to serve files.
+// When IsIndexPage is true, directory listings will be generated for directories that don't have an index file.
 func (r *Router) Static(rootPath string, IsIndexPage bool) {
 	fs := &fasthttp.FS{
 		Root:               rootPath,
