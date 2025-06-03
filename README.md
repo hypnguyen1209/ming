@@ -9,7 +9,7 @@
 To install Ming, use the `go get` command:
 
 ```bash
-go get -u github.com/hypnguyen1209/ming
+go get -u github.com/hypnguyen1209/ming/v2
 ```
 
 This will download and install the latest version of Ming and its dependencies in your Go module.

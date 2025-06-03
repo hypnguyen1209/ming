@@ -1,4 +1,4 @@
-module github.com/hypnguyen1209/ming
+module github.com/hypnguyen1209/ming/v2
 
 go 1.23.0
 
