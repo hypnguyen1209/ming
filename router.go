@@ -9,6 +9,7 @@ package ming
 import (
 	"fmt"
 	"log"
+	"net"
 	"strings"
 	"time"
 
@@ -83,6 +84,49 @@ func (r *Router) LoggingHandler() fasthttp.RequestHandler {
 // This is a convenience function to start the server with default configuration.
 // It includes request logging that shows timestamp, method, path, client IP, status code, and response time.
 func (r *Router) Run(addr string) {
+	// Print startup message showing version and available endpoints
+	fmt.Println("Ming (" + Version + ") is running on:")
+	
+	// Get network interfaces for printing available URLs
+	ifaces, err := net.Interfaces()
+	if err == nil {
+		port := "8080" // Default port
+		if strings.HasPrefix(addr, ":") {
+			port = addr[1:]
+		} else if strings.Contains(addr, ":") {
+			port = strings.Split(addr, ":")[1]
+		}
+		
+		// Print URLs for all available interfaces
+		for _, iface := range ifaces {
+			addrs, err := iface.Addrs()
+			if err != nil {
+				continue
+			}
+			for _, addr := range addrs {
+				var ip net.IP
+				switch v := addr.(type) {
+				case *net.IPNet:
+					ip = v.IP
+				case *net.IPAddr:
+					ip = v.IP
+				}
+				// Skip loopback and non-IPv4 addresses except localhost
+				if ip.IsLoopback() && ip.To4() != nil {
+					fmt.Printf("- http://127.0.0.1:%s\n", port)
+					break
+				} else if ip.To4() != nil && !ip.IsLoopback() {
+					fmt.Printf("- http://%s:%s\n", ip.String(), port)
+				}
+			}
+		}
+	}
+	
+	fmt.Println("----------------------------------------------")
+	fmt.Println("Logging format: [YYYY/MM/DD - HH:MM:SS] METHOD - PATH - IP:PORT - STATUS - DURATION")
+	fmt.Println("Min time unit: microsecond (µs)")
+	fmt.Println("----------------------------------------------")
+
 	if strings.HasPrefix(addr, ":") {
 		log.Fatal(fasthttp.ListenAndServe(addr, r.LoggingHandler()))
 	} else {
