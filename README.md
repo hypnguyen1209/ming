@@ -11,7 +11,7 @@ Custom HTTP Mux lightweight and high performance 🥗
 ✅ **Optional Parameters** - `/api/users/{id?}` for flexible routing  
 ✅ **Regex Validation** - `/product/{id:[0-9]+}` for parameter validation  
 ✅ **Catch-All Routes** - `/files/{path:*}` for wildcard matching  
-✅ **Priority-Based Routing** - Radix tree with optimized lookups  
+✅ **Priority-Based Routing** - Radix tree with optimized lookups for O(k) matching complexity  
 ✅ **Route Conflict Resolution** - Static routes take precedence over parameter routes  
 ✅ **Method Support** - GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS, TRACE, CONNECT  
 ✅ **Static File Serving** - Built-in static file handler  
@@ -380,7 +380,14 @@ This is particularly useful for:
 
 ### Priority-Based Routing
 
-Ming uses a sophisticated radix tree to store and match routes. The routing algorithm follows specific priority rules:
+Ming uses a sophisticated radix tree (also known as a prefix tree or trie) to store and match routes. This data structure provides several key advantages:
+
+- **O(k) Matching Complexity**: Where k is the length of the URL path, not the number of routes
+- **Memory Efficiency**: Common prefixes are stored only once, reducing memory usage
+- **Predictable Performance**: Lookup time remains consistent regardless of route count
+- **Path Compression**: Optimized tree structure with compressed nodes for faster traversal
+
+The routing algorithm follows specific priority rules:
 
 1. **Static routes** have the highest priority
 2. **More specific routes** take precedence over general ones
@@ -393,7 +400,9 @@ r.Get("/user/profile", specificHandler)  // Higher priority - matches exactly /u
 r.Get("/user/{name}", generalHandler)    // Lower priority - matches /user/john but not /user/profile
 ```
 
-This priority system ensures that the most appropriate handler is always selected for each request.
+This priority system ensures that the most appropriate handler is always selected for each request. The radix tree implementation automatically handles these priority rules during route registration and lookup.
+
+Unlike hash map-based routers that require full string comparisons, Ming's radix tree performs character-by-character matching, allowing for early termination and more efficient handling of similar routes with different parameters.
 
 ### Route Conflict Resolution
 
