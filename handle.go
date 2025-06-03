@@ -11,41 +11,90 @@ func (r *Router) Handle(method, path string, handler fasthttp.RequestHandler) {
 	if !strings.HasPrefix(path, "/") {
 		panic("path must begin with \"/\" in \"" + path + "\"")
 	}
-	r.trees.Add(&Node{
-		method:  method,
-		path:    path,
-		handler: handler,
-	})
+	
+	if r.trees == nil {
+		r.trees = make(map[string]*Tree)
+	}
+	
+	tree := r.trees[method]
+	if tree == nil {
+		tree = NewTree(method)
+		r.trees[method] = tree
+	}
+	
+	tree.addRoute(path, handler)
 }
 
 func (r *Router) Handler(ctx *fasthttp.RequestCtx) {
 	if r.PanicHandler != nil {
 		defer r.recv(ctx)
 	}
+	
 	path := string(ctx.Path())
 	method := GetMethod(ctx)
-	if nodeFindByPath := r.trees.FindPath(path); nodeFindByPath.Len() != 0 {
-		if node := nodeFindByPath.FindMethod(method); node != nil {
-			handler := node.GetHandler()
-			handler(ctx)
-		} else {
-			if node := nodeFindByPath.GetMethodAll(); node != nil {
-				handler := node.GetHandler()
-				handler(ctx)
-			} else {
-				if r.MethodNotAllowed != nil {
-					r.MethodNotAllowed(ctx)
-				} else {
-					ctx.Error("method not allowed", fasthttp.StatusMethodNotAllowed)
-				}
+	
+	if tree := r.trees[method]; tree != nil {
+		if handler, params, tsr := tree.getValue(path, method); handler != nil {
+			// Set parameters in context
+			for _, param := range params {
+				ctx.SetUserValue(param.Key, param.Value)
 			}
+			handler(ctx)
+			return
+		} else if tsr && method != fasthttp.MethodConnect {
+			// Handle trailing slash redirect
+			var redirectPath string
+			if len(path) > 1 && path[len(path)-1] == '/' {
+				redirectPath = path[:len(path)-1]
+			} else {
+				redirectPath = path + "/"
+			}
+			ctx.Response.Header.Set("Location", redirectPath)
+			ctx.SetStatusCode(fasthttp.StatusMovedPermanently)
+			return
 		}
-	} else {
-		if r.NotFound != nil {
-			r.NotFound(ctx)
+	}
+	
+	// Try ALL method as fallback
+	if tree := r.trees["ALL"]; tree != nil {
+		if handler, params, _ := tree.getValue(path, "ALL"); handler != nil {
+			// Set parameters in context
+			for _, param := range params {
+				ctx.SetUserValue(param.Key, param.Value)
+			}
+			handler(ctx)
+			return
+		}
+	}
+	
+	// Check if method is allowed for this path
+	allowed := make([]string, 0, len(r.trees))
+	for m, tree := range r.trees {
+		if m == method || m == "ALL" {
+			continue
+		}
+		if handler, _, _ := tree.getValue(path, m); handler != nil {
+			allowed = append(allowed, m)
+		}
+	}
+	
+	if len(allowed) > 0 {
+		allowHeader := strings.Join(allowed, ", ")
+		if r.MethodNotAllowed != nil {
+			ctx.Response.Header.Set("Allow", allowHeader)
+			r.MethodNotAllowed(ctx)
 		} else {
-			ctx.Error(fmt.Sprintf("%s %s not found", method, path), fasthttp.StatusNotFound)
+			ctx.Error("Method Not Allowed", fasthttp.StatusMethodNotAllowed)
+			ctx.Response.Header.Set("Allow", allowHeader)
 		}
+		return
+	}
+	
+	// Not found
+	if r.NotFound != nil {
+		r.NotFound(ctx)
+	} else {
+		ctx.Error(fmt.Sprintf("%s %s not found", method, path), fasthttp.StatusNotFound)
 	}
 }
 

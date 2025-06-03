@@ -1,0 +1,5 @@
+*.log
+*.tmp
+*.bak
+*.swp
+*.DS_Store

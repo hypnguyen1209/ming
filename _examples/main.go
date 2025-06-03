@@ -24,6 +24,18 @@ func PostHandler(ctx *fasthttp.RequestCtx) {
 	ctx.Write(ming.Body(ctx))
 }
 
+// New handler with named parameters
+func UserHandler(ctx *fasthttp.RequestCtx) {
+	name := ming.Param(ctx, "name")
+	fmt.Fprintf(ctx, "User: %s", name)
+}
+
+func UserPostHandler(ctx *fasthttp.RequestCtx) {
+	userId := ming.Param(ctx, "userId")
+	postId := ming.Param(ctx, "postId")
+	fmt.Fprintf(ctx, "User %s, Post %s", userId, postId)
+}
+
 func main() {
 	r := ming.New()
 	r.Static("./", true)
@@ -31,5 +43,10 @@ func main() {
 	r.Post("/add", PostHandler)
 	r.All("/all", AllHandler)
 	r.Get("/search", SearchHandler)
+	
+	// Named parameter routes
+	r.Get("/user/{name}", UserHandler)
+	r.Get("/user/{userId}/post/{postId}", UserPostHandler)
+	
 	r.Run("127.0.0.1:8000")
 }

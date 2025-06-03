@@ -9,7 +9,7 @@ func GetMethod(ctx *fasthttp.RequestCtx) string {
 	case ctx.IsPost():
 		return fasthttp.MethodPost
 	case ctx.IsHead():
-		return fasthttp.MethodPatch
+		return fasthttp.MethodHead
 	case ctx.IsPut():
 		return fasthttp.MethodPut
 	case ctx.IsPatch():
