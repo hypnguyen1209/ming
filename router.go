@@ -10,7 +10,10 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/valyala/fasthttp"
@@ -83,6 +86,7 @@ func (r *Router) LoggingHandler() fasthttp.RequestHandler {
 // The addr parameter can be either ":8080" for all interfaces or "127.0.0.1:8080" for specific interface.
 // This is a convenience function to start the server with default configuration.
 // It includes request logging that shows timestamp, method, path, client IP, status code, and response time.
+// The server supports graceful shutdown on SIGINT and SIGTERM signals.
 func (r *Router) Run(addr string) {
 	// Print startup message showing version and available endpoints
 	fmt.Println("Ming (" + Version + ") is running on:")
@@ -124,13 +128,39 @@ func (r *Router) Run(addr string) {
 	
 	fmt.Println("----------------------------------------------")
 
+	// Create server instance
+	var server *fasthttp.Server
+	
 	if strings.HasPrefix(addr, ":") {
-		log.Fatal(fasthttp.ListenAndServe(addr, r.LoggingHandler()))
+		server = &fasthttp.Server{
+			Handler: r.LoggingHandler(),
+		}
 	} else {
 		port := ":" + strings.Split(addr, ":")[1]
 		hs := make(HostSwitch)
 		hs[addr] = r.LoggingHandler()
-		log.Fatal(fasthttp.ListenAndServe(port, hs.CheckHost))
+		server = &fasthttp.Server{
+			Handler: hs.CheckHost,
+		}
+		addr = port
+	}
+
+	// Setup graceful shutdown
+	go func() {
+		sigChan := make(chan os.Signal, 1)
+		signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+		<-sigChan
+		log.Println("Shutting down server...")
+		if err := server.Shutdown(); err != nil {
+			log.Printf("Server shutdown error: %v", err)
+		} else {
+			log.Println("Server shutdown completed")
+		}
+	}()
+
+	// Start server
+	if err := server.ListenAndServe(addr); err != nil {
+		log.Printf("Server stopped: %v", err)
 	}
 }
 
