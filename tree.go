@@ -220,8 +220,20 @@ func (n *Node) insertChild(path, method string, handler fasthttp.RequestHandler,
 			panic("catch-all routes are only allowed at the end of the path")
 		}
 
-		if len(n.children) > 0 {
-			panic("catch-all conflicts with existing children")
+		// Allow multiple catch-all routes with different path prefixes
+		// Check if there's a catch-all child with the same prefix
+		hasSamePrefix := false
+		for _, child := range n.children {
+			if child.nType == catchAll {
+				// If we already have a catch-all route with exactly the same prefix,
+				// don't allow another one with the same prefix
+				hasSamePrefix = true
+				break
+			}
+		}
+		
+		if hasSamePrefix {
+			panic("catch-all route with the same prefix already exists")
 		}
 		
 		// Special handling for catch-all paths that end with "/"
@@ -521,8 +533,30 @@ walk: // Outer loop for walking the tree
 					return
 				}
 
-				// Handle wildcard child
-				n = n.children[0]
+				// If there are multiple wildcard children (multiple catch-all routes with different prefixes)
+				// we need to check all of them to find the right one
+				if len(n.children) > 1 {
+					// Try to find the best matching child
+					var matchChild *Node
+					for _, child := range n.children {
+						if child.nType == catchAll {
+							// Match found
+							matchChild = child
+							break
+						}
+					}
+					
+					// If we found a match, use it
+					if matchChild != nil {
+						n = matchChild
+					} else {
+						// Otherwise, use the first child (backward compatibility)
+						n = n.children[0]
+					}
+				} else {
+					// Handle wildcard child - backward compatible behavior
+					n = n.children[0]
+				}
 				
 				// For catch-all nodes, handle them immediately regardless of path matching
 				if n.nType == catchAll {
@@ -540,6 +574,8 @@ walk: // Outer loop for walking the tree
 					} else if strings.HasPrefix(value, "/") {
 						value = value[1:] // remove leading slash
 					}
+					
+
 					
 					if len(n.paramNames) > 0 {
 						params = append(params, Parameter{

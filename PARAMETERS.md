@@ -96,6 +96,31 @@ r.Get("/files/{filepath:*}", func(ctx *fasthttp.RequestCtx) {
 - `/files/docs/readme.txt` ✅ matches
 - `/files/path/to/deep/file.pdf` ✅ matches
 
+#### Multiple Catch-All Routes
+
+Ming supports registering multiple catch-all routes with different prefixes in the same router instance. This is useful for creating file servers, API proxies, or any application that needs to handle different types of wildcard paths.
+
+```go
+// These will work together - multiple catch-all routes with different prefixes
+r.Get("/files/{filepath:*}", filesHandler)
+r.Get("/documents/{docpath:*}", docsHandler)
+r.Get("/api/v1/proxy/{url:*}", proxyHandler)
+r.Get("/media/{mediapath:*}", mediaHandler)
+
+// This will cause a panic - same prefix with different catch-all parameter name
+r.Get("/files/{otherpath:*}", otherHandler)
+```
+
+**Examples with multiple catch-all routes:**
+- `/files/report.pdf` ✅ matches filesHandler
+- `/documents/contract.docx` ✅ matches docsHandler
+- `/api/v1/proxy/https://example.com` ✅ matches proxyHandler
+- `/media/videos/demo.mp4` ✅ matches mediaHandler
+
+**URL Handling Note:** When using catch-all routes with URLs (like in a proxy), be aware that URLs containing `http://` or `https://` will have one slash removed in the captured parameter. For example, `/api/v1/proxy/https://example.com` will capture `https:/example.com` (with one slash removed). Your handler should account for this when processing URLs.
+
+See the [multiple catch-all example](_examples/multiple_catchall_example.go) for a complete implementation.
+
 ### 6. Named Parameters with Suffixes
 
 Parameters can have suffixes:

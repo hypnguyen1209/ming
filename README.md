@@ -100,6 +100,21 @@ r.Get("/category/{name:[a-zA-Z]+}", handler) // Only alphabetic names
 r.Get("/files/{filepath:*}", handler)  // Matches: /files/docs/readme.txt
 ```
 
+### Multiple Catch-All Routes
+Ming supports multiple catch-all routes with different path prefixes in the same router instance:
+
+```go
+// Each catch-all route captures everything after its prefix
+r.Get("/files/{filepath:*}", fileHandler)
+r.Get("/documents/{docpath:*}", documentHandler)
+r.Get("/api/v1/proxy/{url:*}", apiProxyHandler)
+r.Get("/media/{mediapath:*}", mediaHandler)
+```
+
+This feature is useful for creating file servers, API proxies, or any application that needs to match multiple wildcard paths with different prefixes.
+
+See the [multiple catch-all example](_examples/multiple_catchall_example.go) for a complete implementation.
+
 ### Complex Routes
 ```go
 r.Get("/api/{version:[v][0-9]+}/users/{userId:[0-9]+}/files/{filepath:*}", handler)
@@ -382,11 +397,21 @@ r.Get("/files/{filepath:*}", func(ctx *fasthttp.RequestCtx) {
 })
 ```
 
+Ming supports multiple catch-all routes with different path prefixes:
+
+```go
+// Multiple catch-all routes for different areas of your application
+r.Get("/files/{filepath:*}", filesHandler)
+r.Get("/documents/{docpath:*}", documentsHandler)
+r.Get("/api/v1/proxy/{url:*}", proxyHandler)
+```
+
 This is particularly useful for:
 - File servers
 - Proxy routes
 - Backend APIs that preserve URL structure
 - Documentation systems
+- APIs with multiple resource types
 
 ### Priority-Based Routing
 
